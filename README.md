@@ -1,1 +1,0 @@
-# lgc-tw.github.io
