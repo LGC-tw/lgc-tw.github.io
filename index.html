@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LGC - 個人首頁</title>
+    <!-- 引入 Tabler Icons 圖示庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.44.0/tabler-icons.min.css">
+    <style>
+        :root {
+            /* 淺色主題 */
+            --bg-color: #fcfcfc;
+            --text-color: #1a1a1a;
+            --muted-color: #666666;
+            --border-color: #1a1a1a;
+            --tag-bg: #f0f0f0;
+            --btn-hover-bg: #1a1a1a;
+            --btn-hover-text: #ffffff;
+            --tooltip-bg: #ffffff;
+            --tooltip-text: #1a1a1a;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --icon-transition: transform 0.5s ease, opacity 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            /* 調整後的深色主題：更柔和的墨灰色與低對比字體 */
+            --bg-color: #18181b;
+            --text-color: #d4d4d8;
+            --muted-color: #8c8c93;
+            --border-color: #3f3f46;
+            --tag-bg: #27272a;
+            --btn-hover-bg: #d4d4d8;
+            --btn-hover-text: #18181b;
+            --tooltip-bg: #27272a;
+            --tooltip-text: #d4d4d8;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 1.5rem 1rem;
+        }
+
+        .wrapper {
+            max-width: 680px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* 圓形深淺色切換按鈕 */
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: transparent;
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--btn-hover-bg);
+            color: var(--btn-hover-text);
+        }
+
+        .theme-toggle i {
+            position: absolute;
+            transition: var(--icon-transition);
+        }
+
+        [data-theme="light"] .ti-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+        [data-theme="light"] .ti-sun { opacity: 0; transform: rotate(90deg) scale(0.5); }
+        [data-theme="dark"] .ti-moon { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+        [data-theme="dark"] .ti-sun { opacity: 1; transform: rotate(0deg) scale(1); }
+
+        /* Header 區域 */
+        header {
+            margin-bottom: 2rem;
+            padding-right: 50px;
+        }
+
+        .site-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+        }
+
+        .bio {
+            font-size: 1rem;
+            color: var(--muted-color);
+            margin-bottom: 1.25rem;
+            max-width: 580px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* 圓形社群連結按鈕 */
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 1.1rem;
+            position: relative;
+        }
+
+        .social-icon:hover {
+            background-color: var(--btn-hover-bg);
+            color: var(--btn-hover-text);
+            transform: translateY(-2px);
+        }
+
+        section {
+            margin-bottom: 2rem;
+        }
+
+        /* 區塊標題 */
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.01em;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.25rem;
+            display: inline-block;
+        }
+
+        /* 技術棧標籤 */
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .tag {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            background-color: var(--tag-bg);
+            padding: 0.35rem 0.75rem;
+            border-left: 3px solid var(--border-color);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .tag::before {
+            content: "#";
+            color: var(--muted-color);
+            font-weight: 400;
+        }
+
+        /* 學習藍圖 (Roadmap) */
+        .roadmap {
+            position: relative;
+            padding-left: 1.5rem;
+            border-left: 2px solid var(--border-color);
+            margin-top: 0.5rem;
+        }
+
+        .roadmap-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .roadmap-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 時間軸節點 */
+        .roadmap-node {
+            position: absolute;
+            left: calc(-1.5rem - 5px);
+            top: 0.4rem;
+            width: 8px;
+            height: 8px;
+            background-color: var(--bg-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .roadmap-item:hover .roadmap-node {
+            background-color: var(--border-color);
+        }
+
+        /* 標題與年齡標籤 */
+        .roadmap-title {
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .roadmap-age {
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+            padding: 0.1rem 0.4rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        /* 詳細資訊 Tooltip */
+        .roadmap-detail {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            left: 0;
+            top: 2rem;
+            width: 480px;
+            max-width: calc(100vw - 2.5rem);
+            background-color: var(--tooltip-bg);
+            color: var(--tooltip-text);
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px var(--shadow-color);
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+            transform: translateY(8px);
+        }
+
+        .roadmap-item:hover .roadmap-detail {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .roadmap-detail h4 {
+            font-size: 0.8rem;
+            margin-top: 0.6rem;
+            margin-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .roadmap-detail h4:first-child {
+            margin-top: 0;
+        }
+
+        .roadmap-detail ul {
+            padding-left: 1.1rem;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .roadmap-detail .cert {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* 頁尾 */
+        footer {
+            font-size: 0.8rem;
+            color: var(--muted-color);
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+            margin-top: 2rem;
+        }
+
+        /* RWD 手機版優化 */
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem 0.75rem;
+            }
+
+            .site-title {
+                font-size: 1.65rem;
+            }
+
+            .roadmap-item {
+                width: 100%;
+            }
+
+            .roadmap-detail {
+                position: relative;
+                top: 0.5rem;
+                left: -0.75rem;
+                width: calc(100% + 0.75rem);
+                max-width: none;
+                box-shadow: none;
+            }
+
+            .roadmap-item:hover .roadmap-detail {
+                pointer-events: auto;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="wrapper">
+        <!-- 深淺色切換按鈕 -->
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="切換深淺色模式">
+            <i class="ti ti-moon"></i>
+            <i class="ti ti-sun"></i>
+        </button>
+
+        <!-- 頂部自我介紹區 -->
+        <header>
+            <h1 class="site-title">LGC</h1>
+            <p class="bio">
+                嗨！我是一位國中生，對程式、系統底層與資安充滿好奇。這裡是我建立的小小個人空間，記錄著我的學習藍圖與專案計畫。
+            </p>
+            
+            <!-- 圓形社群連結 -->
+            <div class="social-links">
+                <a href="https://github.com/LGC-tw" target="_blank" class="social-icon" aria-label="GitHub" title="GitHub: LGC-tw">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                <a href="mailto:lgc.tw@proton.me" class="social-icon" aria-label="Email" title="Email: lgc.tw@proton.me">
+                    <i class="ti ti-mail"></i>
+                </a>
+                <a href="https://t.me/LGC_tw" target="_blank" class="social-icon" aria-label="Telegram" title="Telegram: LGC_tw">
+                    <i class="ti ti-brand-telegram"></i>
+                </a>
+                <a href="https://discord.com/users/lgc.tw" target="_blank" class="social-icon" aria-label="Discord" title="Discord: lgc.tw">
+                    <i class="ti ti-brand-discord"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- 技術棧區塊 -->
+        <section>
+            <h2>技術棧</h2>
+            <div class="tag-list">
+                <span class="tag">Python</span>
+                <span class="tag">Bash</span>
+            </div>
+        </section>
+
+        <!-- 學習藍圖 (Roadmap) -->
+        <section>
+            <h2>學習藍圖</h2>
+            <div class="roadmap">
+                
+                <!-- 12 - 13 歲 -->
+                <div class="roadmap-item">
+                    <div class="roadmap-node"></div>
+                    <div class="roadmap-title">
+                        <span class="roadmap-age">12 - 13 歲</span> Python 程式設計
+                    </div>
+                    <div class="roadmap-detail">
+                        <h4>核心內容</h4>
+                        <ul>
+                            <li>基礎語法與控制結構：變數, 資料型態, 條件判斷, 迴圈, 函式</li>
+                            <li>進階應用：例外處理, 檔案 I/O（讀寫文字與二進位檔案）, 模組化設計</li>
+                            <li>網路資料擷取：使用 Requests 與 BeautifulSoup 進行網頁資料抓取</li>
+                        </ul>
+                        <h4>相關證照</h4>
+                        <div class="cert">PCEP / PCAP（入門至中級挑戰）</div>
+                    </div>
+                </div>
+
+                <!-- 13 - 14 歲 -->
+                <div class="roadmap-item">
+                    <div class="roadmap-node"></div>
+                    <div class="roadmap-title">
+                        <span class="roadmap-age">13 - 14 歲</span> Bash 與 Linux 系統
+                    </div>
+                    <div class="roadmap-detail">
+                        <h4>核心內容</h4>
+                        <ul>
+                            <li>終端機操作與檔案系統導覽</li>
+                            <li>權限管理、檔案擁有者與群組設定（Chmod / Chown）</li>
+                            <li>進程管理與管線操作（Pipes / Redirection）</li>
+                            <li>Bash 腳本撰寫：變數, 條件判斷, 迴圈與命令參數處理</li>
+                        </ul>
+                        <h4>相關證照</h4>
+                        <div class="cert">Linux Essentials</div>
+                    </div>
+                </div>
+
+                <!-- 14 - 16 歲 -->
+                <div class="roadmap-item">
+                    <div class="roadmap-node"></div>
+                    <div class="roadmap-title">
+                        <span class="roadmap-age">14 - 16 歲</span> C 語言與系統底層
+                    </div>
+                    <div class="roadmap-detail">
+                        <h4>核心內容</h4>
+                        <ul>
+                            <li>記憶體模型：指標（Pointer）, 記憶體配置（Malloc/Free）與位址運算</li>
+                            <li>資料結構實作：陣列、字串處理, 結構、聯合與鏈結串列</li>
+                            <li>系統呼叫與編譯流程：前置處理器、編譯器、連結器運作原理</li>
+                        </ul>
+                        <h4>相關證照</h4>
+                        <div class="cert">CompTIA Security+</div>
+                    </div>
+                </div>
+
+                <!-- 16 - 18 歲 -->
+                <div class="roadmap-item">
+                    <div class="roadmap-node"></div>
+                    <div class="roadmap-title">
+                        <span class="roadmap-age">16 - 18 歲</span> Rust 與資安實戰
+                    </div>
+                    <div class="roadmap-detail">
+                        <h4>核心內容</h4>
+                        <ul>
+                            <li>記憶體安全機制：所有權（Ownership）, 借用（Borrowing）與生命週期</li>
+                            <li>錯誤處理機制、型別系統與泛型</li>
+                            <li>系統級與網路工具開發：多執行緒並行處理, Socket 網路通訊</li>
+                        </ul>
+                        <h4>相關證照</h4>
+                        <div class="cert">OSCP (Offensive Security Certified Professional)</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 底部 -->
+        <footer>
+            &copy; 2026 LGC. All Rights Reserved.
+        </footer>
+    </div>
+
+    <script>
+        const body = document.body;
+
+        function toggleTheme() {
+            const currentTheme = body.getAttribute('data-theme');
+            if (currentTheme === 'light') {
+                body.setAttribute('data-theme', 'dark');
+            } else {
+                body.setAttribute('data-theme', 'light');
+            }
+        }
+    </script>
+</body>
+</html>
