@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>COSCUP 2026 專屬行程助手</title>
+    <title>COSCUP 2026 專屬行程助手 (更新版)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
             --header-bg: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-bg: rgba(255, 255, 255, 0.9);
             --text-main: #2d3748;
             --text-muted: #718096;
             --primary: #3182ce;
             --active-color: #38a169;
             --next-color: #dd6b20;
+            --warning-color: #e53e3e;
             --tag-gray: #edf2f7;
             --tag-gray-text: #4a5568;
         }
@@ -95,7 +96,7 @@
             background: var(--card-bg);
             border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             border-left: 8px solid #cbd5e0;
             position: relative;
             backdrop-filter: blur(5px);
@@ -105,7 +106,7 @@
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
         /* Status Colors */
@@ -126,6 +127,11 @@
             opacity: 0.6;
             filter: grayscale(0.8);
         }
+        
+        .card.warning {
+            border-left-color: var(--warning-color);
+            background: #fff5f5;
+        }
 
         /* Badges */
         .status-badge {
@@ -139,7 +145,6 @@
             color: white;
             display: none;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
@@ -148,8 +153,8 @@
             100% { box-shadow: 0 0 0 0 rgba(56, 161, 105, 0); }
         }
 
-        .card.active .status-badge.active-badge { display: block; background: var(--active-color); }
-        .card.next .status-badge.next-badge { display: block; background: var(--next-color); animation: none; }
+        .card.active .status-badge.active-badge { display: block; background: var(--active-color); animation: pulse 2s infinite; }
+        .card.next .status-badge.next-badge { display: block; background: var(--next-color); }
 
         /* Card Content */
         .time {
@@ -161,6 +166,8 @@
             align-items: center;
             gap: 5px;
         }
+        
+        .card.warning .time { color: var(--warning-color); }
 
         .title {
             font-size: 1.2rem;
@@ -169,6 +176,8 @@
             margin-bottom: 10px;
             color: #1a202c;
         }
+        
+        .card.warning .title { color: var(--warning-color); font-weight: 900; }
 
         .meta {
             display: flex;
@@ -189,6 +198,13 @@
             font-weight: 700;
             color: #4a5568;
         }
+        
+        .card.warning .meta-item.location {
+            color: var(--warning-color);
+            background: #fed7d7;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
 
         /* Tags */
         .tags {
@@ -206,13 +222,6 @@
             background: var(--tag-gray);
             color: var(--tag-gray-text);
         }
-
-        .tag.track-jvm { background: #2b395f; color: white; }
-        .tag.track-python { background: #df384b; color: white; }
-        .tag.track-firmware { background: #b75e7a; color: white; }
-        .tag.track-network { background: #3c9f91; color: white; }
-        .tag.track-misc { background: #df6f59; color: white; }
-        .tag.track-jsdc { background: #a2c6b4; color: #1a202c; font-weight: 700; }
 
         /* Progress Bar for Active Card */
         .progress-container {
@@ -241,7 +250,7 @@
 
 <div class="container">
     <header>
-        <h1>COSCUP 2026 個人專屬行程</h1>
+        <h1>COSCUP 2026 專屬行程 (8/8)</h1>
         <div class="clock" id="current-time">00:00:00</div>
         <div class="arrival-tip">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -259,118 +268,97 @@
         {
             start: "08:30", end: "09:00",
             title: "抵達會場 & 報到取票",
-            speaker: "大會工作人員",
-            location: "RB-105 大廳",
+            speaker: "",
+            location: "RB-105 大廳 (綜合研究大樓)",
             tags: [],
-            isRest: true
+            isWarning: false
         },
         {
             start: "09:00", end: "09:30",
-            title: "Welcome Day 1 (開幕式)",
+            title: "COSCUP x UbuCon Asia 2026: Welcome Day 1",
             speaker: "COSCUP 主辦團隊",
             location: "RB-105 (綜合研究大樓)",
             tags: [],
-            isRest: true
+            isWarning: false
         },
         {
             start: "09:30", end: "10:00",
             title: "入職第八天，我開始為 AI 寫文件",
             speaker: "李盈瑩 ( Kate)",
-            location: "TR412-2",
-            tags: [
-                { text: "JVM 台灣代表隊", class: "track-jvm" },
-                { text: "中階", class: "" },
-                { text: "中文", class: "" }
-            ]
+            location: "TR412-2 (研揚大樓)",
+            tags: [{ text: "JVM 台灣代表隊", class: "" }]
         },
         {
             start: "10:00", end: "10:30",
             title: "工程師最陌生的熟人 - 文字二三事",
             speaker: "Homun Mage",
             location: "TR412-1",
-            tags: [
-                { text: "Python Track by Taipei.py", class: "track-python" },
-                { text: "入門", class: "" },
-                { text: "中文", class: "" }
-            ]
+            tags: [{ text: "Python Track by Taipei.py", class: "" }]
         },
         {
             start: "10:30", end: "10:50",
-            title: "✨ 黃金休息 & 攤位尋寶時間 (拿貼紙囉!)",
+            title: "✨ 休息空檔 & 攤位尋寶拿貼紙",
             speaker: "",
-            location: "TR-309 / TR-312 (3樓攤位區)",
-            tags: [],
-            isRest: true
+            location: "TR 3樓攤位區 (TR-309/312)",
+            tags: []
         },
         {
             start: "10:50", end: "11:20",
             title: "Unlock BIOS from close to open",
             speaker: "紀煌豪/Samba Chi",
             location: "TR515",
-            tags: [
-                { text: "Open Source Firmware", class: "track-firmware" },
-                { text: "入門", class: "" },
-                { text: "中文", class: "" }
-            ]
+            tags: [{ text: "Open Source Firmware", class: "" }]
         },
         {
             start: "11:20", end: "11:50",
             title: "抵禦資訊操弄的開源實踐：Cofacts 群眾查核平台的經驗與挑戰",
             speaker: "Johnson, Benson Su",
             location: "TR513",
-            tags: [
-                { text: "網路韌性", class: "track-network" },
-                { text: "中階", class: "" },
-                { text: "中文", class: "" }
-            ]
+            tags: [{ text: "網路韌性", class: "" }]
         },
         {
             start: "11:50", end: "13:00",
             title: "🍱 午餐 & 逛攤位大作戰",
             speaker: "",
             location: "會場周邊 / 攤位區",
-            tags: [],
-            isRest: true
+            tags: []
         },
         {
             start: "13:00", end: "13:30",
-            title: "零知識證明與自然語言處理",
+            title: "零知識證明與自然人憑證身份驗證",
             speaker: "Ya-wen Jeng",
             location: "TR511",
-            tags: [
-                { text: "中階", class: "" },
-                { text: "中文", class: "" }
-            ]
+            tags: []
         },
         {
-            start: "13:40", end: "14:10",
-            title: "Building AI-Powered Interactive Maps with Open Data 如何使用開放資料建構 AI 驅動的互動式地圖",
-            speaker: "Louis Yoong 翁欣瑜",
-            location: "TR211",
-            tags: [
-                { text: "綜合議程 - 各種開源議題", class: "track-misc" },
-                { text: "入門", class: "" },
-                { text: "中文", class: "" }
-            ]
-        },
-        {
-            start: "14:10", end: "14:45",
-            title: "☕ 下午茶大休息時間",
+            start: "13:30", end: "13:40",
+            title: "🚶 跨棟移動注意 (TR 走到 RB)",
             speaker: "",
-            location: "休息區",
+            location: "TR棟 -> RB棟",
             tags: [],
-            isRest: true
+            isWarning: true
+        },
+        {
+            start: "13:40", end: "14:40",
+            title: "Snap 軟體打包入門",
+            speaker: "UbuCon Asia",
+            location: "RB101 (綜合研究大樓)",
+            tags: [{ text: "UbuCon Asia", class: "" }]
+        },
+        {
+            start: "14:40", end: "14:45",
+            title: "🏃 極限趕場：只有 5 分鐘！",
+            speaker: "",
+            location: "RB棟 1樓 ➔ 直衝 TR棟 3樓",
+            tags: [{ text: "腳程要快", class: "" }],
+            isWarning: true
         },
         {
             start: "14:45", end: "15:15",
             title: "同個 Email、兩種登入方式 ── Node.js + Google 登入整合的四個帳號接管路徑",
             speaker: "Gui 桂",
-            location: "TR311",
-            tags: [
-                { text: "JSDC X DevFrontier", class: "track-jsdc" },
-                { text: "中階", class: "" },
-                { text: "中文", class: "" }
-            ]
+            location: "TR311 (研揚大樓)",
+            tags: [{ text: "JSDC X DevFrontier", class: "" }]
         }
     ];
 
@@ -387,10 +375,11 @@
             }
 
             let speakerHTML = item.speaker ? `<div class="meta-item">🎤 ${item.speaker}</div>` : '';
+            let warningClass = item.isWarning ? 'warning' : '';
 
             const card = document.createElement('div');
             card.id = `card-${index}`;
-            card.className = `card`;
+            card.className = `card ${warningClass}`;
             card.innerHTML = `
                 <div class="status-badge active-badge">📍 進行中</div>
                 <div class="status-badge next-badge">👉 下一個行程</div>
@@ -438,7 +427,7 @@
             const endTime = new Date(now);
             endTime.setHours(eHour, eMin, 0, 0);
 
-            // 重置狀態
+            // 重置狀態 (保留 warning class)
             cardEl.classList.remove('active', 'next', 'past');
 
             if (now >= startTime && now < endTime) {
