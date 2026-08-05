@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSCUP 2026 專屬行程助手</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            --header-bg: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --primary: #3182ce;
+            --active-color: #38a169;
+            --next-color: #dd6b20;
+            --tag-gray: #edf2f7;
+            --tag-gray-text: #4a5568;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+        }
+
+        /* Header Styles */
+        header {
+            background: var(--header-bg);
+            color: white;
+            padding: 25px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(30, 60, 114, 0.2);
+            text-align: center;
+            margin-bottom: 30px;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .clock {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #fbd38d;
+            background: rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 30px;
+            letter-spacing: 2px;
+        }
+
+        .arrival-tip {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        /* Timeline Styles */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            border-left: 8px solid #cbd5e0;
+            position: relative;
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Status Colors */
+        .card.active {
+            border-left-color: var(--active-color);
+            background: #ffffff;
+            box-shadow: 0 8px 30px rgba(56, 161, 105, 0.15);
+            border: 2px solid rgba(56, 161, 105, 0.3);
+            border-left: 8px solid var(--active-color);
+        }
+
+        .card.next {
+            border-left-color: var(--next-color);
+            background: #fffdfa;
+        }
+
+        .card.past {
+            opacity: 0.6;
+            filter: grayscale(0.8);
+        }
+
+        /* Badges */
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: white;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(56, 161, 105, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(56, 161, 105, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 161, 105, 0); }
+        }
+
+        .card.active .status-badge.active-badge { display: block; background: var(--active-color); }
+        .card.next .status-badge.next-badge { display: block; background: var(--next-color); animation: none; }
+
+        /* Card Content */
+        .time {
+            font-weight: 900;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            color: #1a202c;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+        }
+
+        .meta-item.location {
+            font-weight: 700;
+            color: #4a5568;
+        }
+
+        /* Tags */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--tag-gray);
+            color: var(--tag-gray-text);
+        }
+
+        .tag.track-jvm { background: #2b395f; color: white; }
+        .tag.track-python { background: #df384b; color: white; }
+        .tag.track-firmware { background: #b75e7a; color: white; }
+        .tag.track-network { background: #3c9f91; color: white; }
+        .tag.track-misc { background: #df6f59; color: white; }
+        .tag.track-jsdc { background: #a2c6b4; color: #1a202c; font-weight: 700; }
+
+        /* Progress Bar for Active Card */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #edf2f7;
+            border-radius: 3px;
+            margin-top: 15px;
+            display: none;
+            overflow: hidden;
+        }
+
+        .card.active .progress-container {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--active-color);
+            width: 0%;
+            transition: width 1s linear;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>COSCUP 2026 個人專屬行程</h1>
+        <div class="clock" id="current-time">00:00:00</div>
+        <div class="arrival-tip">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            建議報到時間：08:30 - 08:40 @ RB-105
+        </div>
+    </header>
+
+    <div class="timeline" id="timeline">
+        <!-- 內容由 JavaScript 動態生成 -->
+    </div>
+</div>
+
+<script>
+    const scheduleData = [
+        {
+            start: "08:30", end: "09:00",
+            title: "抵達會場 & 報到取票",
+            speaker: "大會工作人員",
+            location: "RB-105 大廳",
+            tags: [],
+            isRest: true
+        },
+        {
+            start: "09:00", end: "09:30",
+            title: "Welcome Day 1 (開幕式)",
+            speaker: "COSCUP 主辦團隊",
+            location: "RB-105 (綜合研究大樓)",
+            tags: [],
+            isRest: true
+        },
+        {
+            start: "09:30", end: "10:00",
+            title: "入職第八天，我開始為 AI 寫文件",
+            speaker: "李盈瑩 ( Kate)",
+            location: "TR412-2",
+            tags: [
+                { text: "JVM 台灣代表隊", class: "track-jvm" },
+                { text: "中階", class: "" },
+                { text: "中文", class: "" }
+            ]
+        },
+        {
+            start: "10:00", end: "10:30",
+            title: "工程師最陌生的熟人 - 文字二三事",
+            speaker: "Homun Mage",
+            location: "TR412-1",
+            tags: [
+                { text: "Python Track by Taipei.py", class: "track-python" },
+                { text: "入門", class: "" },
+                { text: "中文", class: "" }
+            ]
+        },
+        {
+            start: "10:30", end: "10:50",
+            title: "✨ 黃金休息 & 攤位尋寶時間 (拿貼紙囉!)",
+            speaker: "",
+            location: "TR-309 / TR-312 (3樓攤位區)",
+            tags: [],
+            isRest: true
+        },
+        {
+            start: "10:50", end: "11:20",
+            title: "Unlock BIOS from close to open",
+            speaker: "紀煌豪/Samba Chi",
+            location: "TR515",
+            tags: [
+                { text: "Open Source Firmware", class: "track-firmware" },
+                { text: "入門", class: "" },
+                { text: "中文", class: "" }
+            ]
+        },
+        {
+            start: "11:20", end: "11:50",
+            title: "抵禦資訊操弄的開源實踐：Cofacts 群眾查核平台的經驗與挑戰",
+            speaker: "Johnson, Benson Su",
+            location: "TR513",
+            tags: [
+                { text: "網路韌性", class: "track-network" },
+                { text: "中階", class: "" },
+                { text: "中文", class: "" }
+            ]
+        },
+        {
+            start: "11:50", end: "13:00",
+            title: "🍱 午餐 & 逛攤位大作戰",
+            speaker: "",
+            location: "會場周邊 / 攤位區",
+            tags: [],
+            isRest: true
+        },
+        {
+            start: "13:00", end: "13:30",
+            title: "零知識證明與自然語言處理",
+            speaker: "Ya-wen Jeng",
+            location: "TR511",
+            tags: [
+                { text: "中階", class: "" },
+                { text: "中文", class: "" }
+            ]
+        },
+        {
+            start: "13:40", end: "14:10",
+            title: "Building AI-Powered Interactive Maps with Open Data 如何使用開放資料建構 AI 驅動的互動式地圖",
+            speaker: "Louis Yoong 翁欣瑜",
+            location: "TR211",
+            tags: [
+                { text: "綜合議程 - 各種開源議題", class: "track-misc" },
+                { text: "入門", class: "" },
+                { text: "中文", class: "" }
+            ]
+        },
+        {
+            start: "14:10", end: "14:45",
+            title: "☕ 下午茶大休息時間",
+            speaker: "",
+            location: "休息區",
+            tags: [],
+            isRest: true
+        },
+        {
+            start: "14:45", end: "15:15",
+            title: "同個 Email、兩種登入方式 ── Node.js + Google 登入整合的四個帳號接管路徑",
+            speaker: "Gui 桂",
+            location: "TR311",
+            tags: [
+                { text: "JSDC X DevFrontier", class: "track-jsdc" },
+                { text: "中階", class: "" },
+                { text: "中文", class: "" }
+            ]
+        }
+    ];
+
+    function renderTimeline() {
+        const timelineEl = document.getElementById('timeline');
+        timelineEl.innerHTML = '';
+
+        scheduleData.forEach((item, index) => {
+            let tagsHTML = '';
+            if (item.tags && item.tags.length > 0) {
+                tagsHTML = `<div class="tags">` + 
+                    item.tags.map(tag => `<span class="tag ${tag.class}">${tag.text}</span>`).join('') +
+                    `</div>`;
+            }
+
+            let speakerHTML = item.speaker ? `<div class="meta-item">🎤 ${item.speaker}</div>` : '';
+
+            const card = document.createElement('div');
+            card.id = `card-${index}`;
+            card.className = `card`;
+            card.innerHTML = `
+                <div class="status-badge active-badge">📍 進行中</div>
+                <div class="status-badge next-badge">👉 下一個行程</div>
+                
+                <div class="time">🕒 ${item.start} - ${item.end}</div>
+                <div class="title">${item.title}</div>
+                
+                <div class="meta">
+                    <div class="meta-item location">📌 ${item.location}</div>
+                    ${speakerHTML}
+                </div>
+                
+                ${tagsHTML}
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-${index}"></div>
+                </div>
+            `;
+            timelineEl.appendChild(card);
+        });
+    }
+
+    function updateState() {
+        const now = new Date();
+        
+        // 更新時鐘
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('current-time').innerText = `${h}:${m}:${s}`;
+
+        let foundActive = false;
+        let foundNext = false;
+
+        scheduleData.forEach((item, index) => {
+            const cardEl = document.getElementById(`card-${index}`);
+            if (!cardEl) return;
+
+            const [sHour, sMin] = item.start.split(':').map(Number);
+            const [eHour, eMin] = item.end.split(':').map(Number);
+
+            const startTime = new Date(now);
+            startTime.setHours(sHour, sMin, 0, 0);
+
+            const endTime = new Date(now);
+            endTime.setHours(eHour, eMin, 0, 0);
+
+            // 重置狀態
+            cardEl.classList.remove('active', 'next', 'past');
+
+            if (now >= startTime && now < endTime) {
+                cardEl.classList.add('active');
+                foundActive = true;
+                
+                // 計算進度條
+                const totalMs = endTime - startTime;
+                const elapsedMs = now - startTime;
+                const percentage = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
+                document.getElementById(`progress-${index}`).style.width = `${percentage}%`;
+
+            } else if (now < startTime) {
+                if (!foundNext) {
+                    cardEl.classList.add('next');
+                    foundNext = true;
+                }
+            } else {
+                cardEl.classList.add('past');
+            }
+        });
+    }
+
+    // 初始化執行
+    renderTimeline();
+    updateState();
+    
+    // 每秒更新時間與狀態
+    setInterval(updateState, 1000);
+</script>
+
+</body>
+</html>
