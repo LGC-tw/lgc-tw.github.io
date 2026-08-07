@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lyrics Pro - 即時歌詞同步</title>
+    <title>Lyrics 0.91</title>
     <style>
         :root {
             --spotify-green: #1db954;
@@ -280,14 +280,13 @@
     <script>
         const SPOTIFY_CLIENT_ID = '65b50d7429ac42b78589632832599023';
         let accessToken = localStorage.getItem('spotify_token');
-        let rawLyricsData = []; // 儲存解析後的 { timeMs, timeStr, text }
+        let rawLyricsData = [];
         let currentTrackId = '';
         let localProgressMs = 0;
         let isPlaying = false;
         let syncTimer = null;
         let progressTimer = null;
 
-        // --- 簡易簡體轉繁體映射（簡化示範，確保順暢） ---
         function toTC(text) {
             if(!text) return '';
             return text
@@ -296,7 +295,6 @@
                 .replace(/说/g, '說').replace(/听/g, '聽').replace(/离/g, '離');
         }
 
-        // --- 初始化頁面 ---
         window.onload = () => {
             handleSpotifyCallback();
             if (accessToken) {
@@ -305,10 +303,8 @@
             }
         };
 
-        // --- Spotify OAuth Implicit Flow ---
         function toggleSpotify() {
             if (accessToken) {
-                // 斷開連結
                 accessToken = null;
                 localStorage.removeItem('spotify_token');
                 updateSpotifyButton(false);
@@ -317,7 +313,6 @@
                 if(progressTimer) clearInterval(progressTimer);
                 showToast("已取消 Spotify 連結");
             } else {
-                // 發起授權
                 const redirectUri = window.location.origin + window.location.pathname;
                 const scopes = 'user-read-currently-playing user-read-playback-state';
                 const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
@@ -348,12 +343,10 @@
             }
         }
 
-        // --- 定時同步 Spotify 播放狀態 ---
         function startSpotifySync() {
             fetchSpotifyStatus();
-            syncTimer = setInterval(fetchSpotifyStatus, 3000); // 3 秒輪詢一次
+            syncTimer = setInterval(fetchSpotifyStatus, 3000);
             
-            // 前端每 100ms 平滑累加時間
             progressTimer = setInterval(() => {
                 if (isPlaying) {
                     localProgressMs += 100;
@@ -370,7 +363,7 @@
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
 
-                if (res.status === 401) { // Token 過期
+                if (res.status === 401) {
                     toggleSpotify();
                     showToast("授權已過期，請重新連結");
                     return;
@@ -382,13 +375,11 @@
                         isPlaying = data.is_playing;
                         localProgressMs = data.progress_ms;
 
-                        // 更新卡片 UI
                         document.getElementById('playerCard').classList.add('active');
                         document.getElementById('trackTitle').innerText = toTC(data.item.name);
                         document.getElementById('trackArtist').innerText = toTC(data.item.artists.map(a => a.name).join(', '));
                         document.getElementById('albumCover').src = data.item.album.images[0]?.url || '';
 
-                        // 檢測是否換歌
                         if (currentTrackId !== data.item.id) {
                             currentTrackId = data.item.id;
                             searchAndFetchLyrics(data.item.name, data.item.artists[0].name);
@@ -400,7 +391,6 @@
             }
         }
 
-        // --- 手動搜尋與 LRCLIB API 對接 ---
         function manualSearch() {
             const query = document.getElementById('searchInput').value.trim();
             if (query) {
@@ -434,7 +424,6 @@
             }
         }
 
-        // --- 解析 LRC 歌詞格式 ---
         function parseLRC(lrcText) {
             rawLyricsData = [];
             const lines = lrcText.split('\n');
@@ -469,7 +458,6 @@
             renderLyrics();
         }
 
-        // --- 渲染歌詞至 DOM ---
         function renderLyrics() {
             const container = document.getElementById('lyricsContainer');
             const isPro = document.getElementById('proModeToggle').checked;
@@ -484,7 +472,6 @@
             `).join('');
         }
 
-        // --- 即時歌詞高亮與滾動 ---
         function highlightCurrentLyric(currentMs) {
             if (rawLyricsData.length === 0 || rawLyricsData[0].timeMs === -1) return;
 
@@ -504,14 +491,11 @@
                 if (targetLine && currentActive !== targetLine) {
                     if (currentActive) currentActive.classList.remove('active');
                     targetLine.classList.add('active');
-
-                    // 置中平滑滾動
                     targetLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
         }
 
-        // --- 複製與下載功能 ---
         function copyLyrics() {
             if (rawLyricsData.length === 0) return;
             const isPro = document.getElementById('proModeToggle').checked;
