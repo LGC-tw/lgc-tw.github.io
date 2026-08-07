@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lyrics Pro - 即時歌詞同步</title>
+    <style>
+        :root {
+            --spotify-green: #1db954;
+            --bg-dark: #0b0e11;
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.6);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #1a202c, #0b0e11);
+            min-height: 100vh;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 15px;
+            overflow-x: hidden;
+        }
+
+        .container { width: 100%; max-width: 650px; }
+
+        /* 頂部導覽與控制區 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--spotify-green);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls { display: flex; gap: 10px; align-items: center; }
+
+        .btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-spotify {
+            background: var(--spotify-green);
+            color: #000;
+            border: none;
+        }
+
+        .btn-spotify.connected {
+            background: rgba(29, 185, 84, 0.15);
+            color: var(--spotify-green);
+            border: 1px solid var(--spotify-green);
+        }
+
+        /* 搜尋框區塊 */
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 50px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 0 20px;
+            color: #fff;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            outline: none;
+        }
+
+        .search-input:focus { border-color: var(--spotify-green); }
+
+        /* 功能設定條 */
+        .mode-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 10px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .switch {
+            position: relative; display: inline-block; width: 44px; height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: .3s; border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--spotify-green); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* 播放狀態卡片 */
+        .player-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 15px 20px;
+            backdrop-filter: blur(20px);
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+        }
+        .player-card.active { display: flex; }
+        .album-cover { width: 50px; height: 50px; border-radius: 10px; background: #222; }
+        .track-info { flex: 1; overflow: hidden; }
+        .track-title { font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-artist { font-size: 13px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* 歌詞滾動展示區 */
+        .lyrics-container {
+            width: 100%;
+            height: 55vh;
+            overflow-y: auto;
+            border-radius: 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(20px);
+            padding: 150px 20px;
+            text-align: center;
+            scroll-behavior: smooth;
+        }
+
+        .lyrics-container::-webkit-scrollbar { width: 4px; }
+        .lyrics-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        .lyric-line {
+            padding: 12px 10px;
+            font-size: 18px;
+            color: var(--text-sub);
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .lyric-line.active {
+            color: var(--spotify-green);
+            font-size: 22px;
+            font-weight: 800;
+            transform: scale(1.05);
+        }
+
+        .time-tag {
+            font-size: 12px;
+            opacity: 0.5;
+            margin-right: 8px;
+            font-family: monospace;
+        }
+
+        /* 底部操作 */
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .action-btn {
+            flex: 1;
+            height: 48px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            background: rgba(0,0,0,0.85);
+            border: 1px solid var(--card-border);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 頂部列 -->
+        <div class="header">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.12-.779-.18-.899-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141 C9.6 9.9 15 10.561 18.72 12.841c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                Lyrics Pro
+            </div>
+            <div class="controls">
+                <button id="spotifyBtn" class="btn btn-spotify" onclick="toggleSpotify()">
+                    連結 Spotify
+                </button>
+            </div>
+        </div>
+
+        <!-- 搜尋列 -->
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="搜尋歌名、歌手，或等待 Spotify 自動同步..." onkeydown="if(event.key==='Enter') manualSearch()">
+        </div>
+
+        <!-- 功能切換 -->
+        <div class="mode-bar">
+            <span>專業模式 (保留時間戳記)</span>
+            <label class="switch">
+                <input type="checkbox" id="proModeToggle" onchange="renderLyrics()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <!-- Spotify 當前播放資訊卡片 -->
+        <div id="playerCard" class="player-card">
+            <img id="albumCover" class="album-cover" src="" alt="Cover">
+            <div class="track-info">
+                <div id="trackTitle" class="track-title">未在播放音樂</div>
+                <div id="trackArtist" class="track-artist">-</div>
+            </div>
+        </div>
+
+        <!-- 歌詞顯示面板 -->
+        <div id="lyricsContainer" class="lyrics-container">
+            <div style="color: var(--text-sub);">尚未載入歌詞<br>可透過上方搜尋或連結 Spotify 自動同步</div>
+        </div>
+
+        <!-- 底部快捷按鈕 -->
+        <div class="action-bar">
+            <button class="action-btn" onclick="copyLyrics()">複製全文</button>
+            <button class="action-btn" onclick="downloadLyrics()">下載 .txt</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const SPOTIFY_CLIENT_ID = '65b50d7429ac42b78589632832599023';
+        let accessToken = localStorage.getItem('spotify_token');
+        let rawLyricsData = []; // 儲存解析後的 { timeMs, timeStr, text }
+        let currentTrackId = '';
+        let localProgressMs = 0;
+        let isPlaying = false;
+        let syncTimer = null;
+        let progressTimer = null;
+
+        // --- 簡易簡體轉繁體映射（簡化示範，確保順暢） ---
+        function toTC(text) {
+            if(!text) return '';
+            return text
+                .replace(/爱/g, '愛').replace(/国/g, '國').replace(/学/g, '學')
+                .replace(/发/g, '發').replace(/体/g, '體').replace(/乐/g, '樂')
+                .replace(/说/g, '說').replace(/听/g, '聽').replace(/离/g, '離');
+        }
+
+        // --- 初始化頁面 ---
+        window.onload = () => {
+            handleSpotifyCallback();
+            if (accessToken) {
+                updateSpotifyButton(true);
+                startSpotifySync();
+            }
+        };
+
+        // --- Spotify OAuth Implicit Flow ---
+        function toggleSpotify() {
+            if (accessToken) {
+                // 斷開連結
+                accessToken = null;
+                localStorage.removeItem('spotify_token');
+                updateSpotifyButton(false);
+                document.getElementById('playerCard').classList.remove('active');
+                if(syncTimer) clearInterval(syncTimer);
+                if(progressTimer) clearInterval(progressTimer);
+                showToast("已取消 Spotify 連結");
+            } else {
+                // 發起授權
+                const redirectUri = window.location.origin + window.location.pathname;
+                const scopes = 'user-read-currently-playing user-read-playback-state';
+                const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+                window.location.href = authUrl;
+            }
+        }
+
+        function handleSpotifyCallback() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            if (params.has('access_token')) {
+                accessToken = params.get('access_token');
+                localStorage.setItem('spotify_token', accessToken);
+                window.location.hash = '';
+                updateSpotifyButton(true);
+                startSpotifySync();
+            }
+        }
+
+        function updateSpotifyButton(connected) {
+            const btn = document.getElementById('spotifyBtn');
+            if (connected) {
+                btn.innerText = "Spotify 同步中";
+                btn.classList.add('connected');
+            } else {
+                btn.innerText = "連結 Spotify";
+                btn.classList.remove('connected');
+            }
+        }
+
+        // --- 定時同步 Spotify 播放狀態 ---
+        function startSpotifySync() {
+            fetchSpotifyStatus();
+            syncTimer = setInterval(fetchSpotifyStatus, 3000); // 3 秒輪詢一次
+            
+            // 前端每 100ms 平滑累加時間
+            progressTimer = setInterval(() => {
+                if (isPlaying) {
+                    localProgressMs += 100;
+                    highlightCurrentLyric(localProgressMs);
+                }
+            }, 100);
+        }
+
+        async function fetchSpotifyStatus() {
+            if (!accessToken) return;
+
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+
+                if (res.status === 401) { // Token 過期
+                    toggleSpotify();
+                    showToast("授權已過期，請重新連結");
+                    return;
+                }
+
+                if (res.status === 200) {
+                    const data = await res.json();
+                    if (data.item) {
+                        isPlaying = data.is_playing;
+                        localProgressMs = data.progress_ms;
+
+                        // 更新卡片 UI
+                        document.getElementById('playerCard').classList.add('active');
+                        document.getElementById('trackTitle').innerText = toTC(data.item.name);
+                        document.getElementById('trackArtist').innerText = toTC(data.item.artists.map(a => a.name).join(', '));
+                        document.getElementById('albumCover').src = data.item.album.images[0]?.url || '';
+
+                        // 檢測是否換歌
+                        if (currentTrackId !== data.item.id) {
+                            currentTrackId = data.item.id;
+                            searchAndFetchLyrics(data.item.name, data.item.artists[0].name);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Spotify API 呼叫失敗", e);
+            }
+        }
+
+        // --- 手動搜尋與 LRCLIB API 對接 ---
+        function manualSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) {
+                searchAndFetchLyrics(query, '');
+            }
+        }
+
+        async function searchAndFetchLyrics(trackName, artistName) {
+            const container = document.getElementById('lyricsContainer');
+            container.innerHTML = '<div style="color: var(--text-sub);">正在搜尋歌詞...</div>';
+
+            try {
+                const url = `https://lrclib.net/api/search?q=${encodeURIComponent(trackName + ' ' + artistName)}`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    const bestMatch = data.find(item => item.syncedLyrics) || data[0];
+                    if (bestMatch.syncedLyrics) {
+                        parseLRC(bestMatch.syncedLyrics);
+                    } else if (bestMatch.plainLyrics) {
+                        parsePlain(bestMatch.plainLyrics);
+                    } else {
+                        container.innerHTML = '<div>未找到同步歌詞</div>';
+                    }
+                } else {
+                    container.innerHTML = '<div>找不到相關歌詞</div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div>歌詞載入失敗</div>';
+            }
+        }
+
+        // --- 解析 LRC 歌詞格式 ---
+        function parseLRC(lrcText) {
+            rawLyricsData = [];
+            const lines = lrcText.split('\n');
+            const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+
+            lines.forEach(line => {
+                const match = timeRegex.exec(line);
+                if (match) {
+                    const min = parseInt(match[1]);
+                    const sec = parseInt(match[2]);
+                    const ms = parseInt(match[3].padEnd(3, '0'));
+                    const totalMs = (min * 60 + sec) * 1000 + ms;
+                    const text = line.replace(timeRegex, '').trim();
+
+                    rawLyricsData.push({
+                        timeMs: totalMs,
+                        timeStr: `[${match[1]}:${match[2]}]`,
+                        text: toTC(text)
+                    });
+                }
+            });
+
+            renderLyrics();
+        }
+
+        function parsePlain(plainText) {
+            rawLyricsData = plainText.split('\n').map(line => ({
+                timeMs: -1,
+                timeStr: '',
+                text: toTC(line.trim())
+            }));
+            renderLyrics();
+        }
+
+        // --- 渲染歌詞至 DOM ---
+        function renderLyrics() {
+            const container = document.getElementById('lyricsContainer');
+            const isPro = document.getElementById('proModeToggle').checked;
+
+            if (rawLyricsData.length === 0) return;
+
+            container.innerHTML = rawLyricsData.map((item, idx) => `
+                <div class="lyric-line" id="line-${idx}" data-ms="${item.timeMs}">
+                    ${isPro && item.timeStr ? `<span class="time-tag">${item.timeStr}</span>` : ''}
+                    ${item.text || '...'}
+                </div>
+            `).join('');
+        }
+
+        // --- 即時歌詞高亮與滾動 ---
+        function highlightCurrentLyric(currentMs) {
+            if (rawLyricsData.length === 0 || rawLyricsData[0].timeMs === -1) return;
+
+            let activeIdx = -1;
+            for (let i = 0; i < rawLyricsData.length; i++) {
+                if (currentMs >= rawLyricsData[i].timeMs) {
+                    activeIdx = i;
+                } else {
+                    break;
+                }
+            }
+
+            if (activeIdx !== -1) {
+                const currentActive = document.querySelector('.lyric-line.active');
+                const targetLine = document.getElementById(`line-${activeIdx}`);
+
+                if (targetLine && currentActive !== targetLine) {
+                    if (currentActive) currentActive.classList.remove('active');
+                    targetLine.classList.add('active');
+
+                    // 置中平滑滾動
+                    targetLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        // --- 複製與下載功能 ---
+        function copyLyrics() {
+            if (rawLyricsData.length === 0) return;
+            const isPro = document.getElementById('proModeToggle').checked;
+            const text = rawLyricsData.map(d => (isPro ? d.timeStr + ' ' : '') + d.text).join('\n');
+            navigator.clipboard.writeText(text);
+            showToast("歌詞已複製至剪貼簿");
+        }
+
+        function downloadLyrics() {
+            if (rawLyricsData.length === 0) return;
+            const isPro = document.getElementById('proModeToggle').checked;
+            const text = rawLyricsData.map(d => (isPro ? d.timeStr + ' ' : '') + d.text).join('\n');
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `lyrics.txt`;
+            a.click();
+            showToast("檔案下載中...");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>
